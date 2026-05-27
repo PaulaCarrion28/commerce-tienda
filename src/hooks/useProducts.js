@@ -12,16 +12,16 @@ export function useProducts() {
     try {
       const { data } = await productService.getAll()
       setProducts(data)
-    } catch (err) {
+    } catch {
+      // 'err' removed — unused variable warning fix
       setError('No se pudieron cargar los productos.')
     } finally {
       setLoading(false)
     }
   }, [])
 
-  useEffect(() => {
-    fetchProducts()
-  }, [fetchProducts])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { fetchProducts() }, [])
 
   const addProduct = async (productData) => {
     const { data } = await productService.create(productData)
@@ -40,13 +40,5 @@ export function useProducts() {
     setProducts((prev) => prev.filter((p) => p.id !== id))
   }
 
-  return {
-    products,
-    loading,
-    error,
-    fetchProducts,
-    addProduct,
-    updateProduct,
-    removeProduct,
-  }
+  return { products, loading, error, fetchProducts, addProduct, updateProduct, removeProduct }
 }

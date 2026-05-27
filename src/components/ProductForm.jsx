@@ -2,43 +2,41 @@ import { useState, useEffect } from 'react'
 
 const CATEGORIES = ['Ropa', 'Electrónica', 'Hogar', 'Deportes', 'Juguetes', 'Belleza', 'Alimentos', 'Otro']
 
-const INITIAL_FORM = {
-  nombre: '',
-  precio: '',
-  categoria: '',
-  stock: '',
-  imagen: '',
-}
+const toForm = (data) => ({
+  nombre:    data?.nombre    ?? '',
+  precio:    data?.precio    ?? '',
+  categoria: data?.categoria ?? '',
+  stock:     data?.stock     ?? '',
+  imagen:    data?.imagen    ?? '',
+})
 
 export default function ProductForm({ initialData = null, onSubmit, loading = false }) {
-  const [form, setForm] = useState(INITIAL_FORM)
+  const [form, setForm] = useState(() => toForm(initialData))
   const [errors, setErrors] = useState({})
+  const [imgError, setImgError] = useState(false)
 
+  // Only re-populate when editing a different product (initialData.id changes)
   useEffect(() => {
     if (initialData) {
-      setForm({
-        nombre: initialData.nombre || '',
-        precio: initialData.precio || '',
-        categoria: initialData.categoria || '',
-        stock: initialData.stock || '',
-        imagen: initialData.imagen || '',
-      })
+      setForm(toForm(initialData))
+      setImgError(false)
     }
-  }, [initialData])
+  }, [initialData?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const validate = () => {
     const errs = {}
-    if (!form.nombre.trim()) errs.nombre = 'El nombre es obligatorio'
+    if (!form.nombre.trim())                    errs.nombre   = 'El nombre es obligatorio'
     if (form.precio === '' || isNaN(form.precio)) errs.precio = 'Ingresa un precio válido'
-    else if (Number(form.precio) < 0) errs.precio = 'El precio no puede ser negativo'
-    if (!form.categoria) errs.categoria = 'Selecciona una categoría'
-    if (form.stock === '' || isNaN(form.stock)) errs.stock = 'Ingresa un stock válido'
-    else if (Number(form.stock) < 0) errs.stock = 'El stock no puede ser negativo'
+    else if (Number(form.precio) < 0)            errs.precio  = 'El precio no puede ser negativo'
+    if (!form.categoria)                         errs.categoria = 'Selecciona una categoría'
+    if (form.stock === '' || isNaN(form.stock))   errs.stock  = 'Ingresa un stock válido'
+    else if (Number(form.stock) < 0)             errs.stock   = 'El stock no puede ser negativo'
     return errs
   }
 
   const handleChange = (e) => {
     const { name, value } = e.target
+    if (name === 'imagen') setImgError(false)
     setForm((prev) => ({ ...prev, [name]: value }))
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: undefined }))
   }
@@ -46,17 +44,19 @@ export default function ProductForm({ initialData = null, onSubmit, loading = fa
   const handleSubmit = (e) => {
     e.preventDefault()
     const errs = validate()
-    if (Object.keys(errs).length > 0) {
-      setErrors(errs)
-      return
+    if (Object.keys(errs).length > 0) { setErrors(errs); return }
+
+    const payload = {
+      nombre:    form.nombre.trim(),
+      precio:    Number(form.precio),
+      categoria: form.categoria,
+      stock:     Number(form.stock),
     }
-    onSubmit({
-      ...form,
-      precio: Number(form.precio),
-      stock: Number(form.stock),
-      imagen: form.imagen || `https://picsum.photos/seed/${Date.now()}/400/300`,
-    })
+    if (form.imagen.trim()) payload.imagen = form.imagen.trim()
+    onSubmit(payload)
   }
+
+  const showPreview = form.imagen.trim() && !imgError
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
@@ -86,7 +86,7 @@ export default function ProductForm({ initialData = null, onSubmit, loading = fa
               step="0.01"
               value={form.precio}
               onChange={handleChange}
-              placeholder="0.00"
+              placeholder="0"
               className={`input-field pl-7 ${errors.precio ? 'border-red-500/50' : ''}`}
             />
           </div>
@@ -126,7 +126,10 @@ export default function ProductForm({ initialData = null, onSubmit, loading = fa
 
       {/* Imagen URL */}
       <div>
-        <label className="label-field">URL de imagen <span className="text-gray-600 normal-case font-normal">(opcional)</span></label>
+        <label className="label-field">
+          URL de imagen{' '}
+          <span className="text-gray-600 normal-case font-normal">(opcional)</span>
+        </label>
         <input
           name="imagen"
           value={form.imagen}
@@ -134,15 +137,27 @@ export default function ProductForm({ initialData = null, onSubmit, loading = fa
           placeholder="https://ejemplo.com/imagen.jpg"
           className="input-field"
         />
-        <p className="mt-1.5 text-xs text-gray-600">Si se deja vacío, se usará una imagen de placeholder automáticamente.</p>
-        {form.imagen && (
-          <div className="mt-3 rounded-xl overflow-hidden border border-white/10 h-32 bg-dark-700">
-            <img
-              src={form.imagen}
-              alt="Preview"
-              className="w-full h-full object-cover"
-              onError={(e) => { e.target.style.display = 'none' }}
-            />
+        <p className="mt-1.5 text-xs text-gray-600">
+          Si se deja vacío, la tarjeta mostrará un ícono de producto.
+        </p>
+
+        {form.imagen.trim() && (
+          <div className="mt-3 rounded-xl overflow-hidden border border-white/10 h-36 bg-dark-700 flex items-center justify-center">
+            {showPreview ? (
+              <img
+                src={form.imagen}
+                alt="Vista previa"
+                className="w-full h-full object-cover"
+                onError={() => setImgError(true)}
+              />
+            ) : (
+              <div className="flex flex-col items-center gap-2 text-gray-600">
+                <svg className="w-7 h-7 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                </svg>
+                <span className="text-xs">URL inválida o imagen no disponible</span>
+              </div>
+            )}
           </div>
         )}
       </div>
