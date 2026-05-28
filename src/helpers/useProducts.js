@@ -1,10 +1,11 @@
+// ── Hook de productos ─────────────────────────────────────────
 import { useState, useEffect, useCallback } from 'react'
 import { productService } from '../services/productService'
 
 export function useProducts() {
   const [products, setProducts] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [loading,  setLoading]  = useState(true)
+  const [error,    setError]    = useState(null)
 
   const fetchProducts = useCallback(async () => {
     setLoading(true)
@@ -13,15 +14,13 @@ export function useProducts() {
       const { data } = await productService.getAll()
       setProducts(data)
     } catch {
-      // 'err' removed — unused variable warning fix
       setError('No se pudieron cargar los productos.')
     } finally {
       setLoading(false)
     }
   }, [])
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { fetchProducts() }, [])
+  useEffect(() => { fetchProducts() }, [fetchProducts])
 
   const addProduct = async (productData) => {
     const { data } = await productService.create(productData)
