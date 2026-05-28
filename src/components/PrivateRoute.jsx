@@ -1,7 +1,7 @@
 import { Navigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { haySession } from '../helpers/localStorage'
 
+// Protege rutas — redirige a /login si no hay sesión activa
 export default function PrivateRoute({ children }) {
-  const { user } = useAuth()
-  return user ? children : <Navigate to="/login" replace />
+  return haySession() ? children : <Navigate to="/login" replace />
 }

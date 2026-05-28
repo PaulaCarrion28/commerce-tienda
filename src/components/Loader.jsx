@@ -3,8 +3,7 @@ export function Spinner({ size = 'md', label = 'Cargando...' }) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 py-12">
       <div className={`${sizes[size]} animate-spin-slow rounded-full border-2 border-dark-500 border-t-accent`}
-        style={{ boxShadow: '0 0 15px rgba(108,99,255,0.3)' }}
-      />
+        style={{ boxShadow: '0 0 15px rgba(108,99,255,0.3)' }} />
       {label && <p className="text-sm text-gray-500 animate-pulse">{label}</p>}
     </div>
   )

@@ -1,51 +1,26 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { obtenerUsuario, eliminarUsuario } from '../helpers/localStorage'
+import { obtenerIniciales } from '../helpers/formatters'
 
 const NAV_LINKS = [
-  {
-    to: '/dashboard',
-    label: 'Dashboard',
-    icon: (
-      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm10 0a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zm10-3a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1h-4a1 1 0 01-1-1v-7z" />
-      </svg>
-    ),
-  },
-  {
-    to: '/productos',
-    label: 'Inventario',
-    icon: (
-      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-      </svg>
-    ),
-  },
-  {
-    to: '/productos/nuevo',
-    label: 'Nuevo Producto',
-    icon: (
-      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-      </svg>
-    ),
-  },
+  { to: '/dashboard',       label: 'Dashboard',      icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm10 0a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zm10-3a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1h-4a1 1 0 01-1-1v-7z" /></svg> },
+  { to: '/productos',       label: 'Inventario',     icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg> },
+  { to: '/productos/nuevo', label: 'Nuevo Producto', icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg> },
 ]
 
 export default function Navbar() {
-  const { user, logout } = useAuth()
-  const location = useLocation()
-  const navigate = useNavigate()
-  const [mobileOpen, setMobileOpen] = useState(false)
+  const location    = useLocation()
+  const navigate    = useNavigate()
+  const user        = obtenerUsuario()
+  const [open, setOpen] = useState(false)
 
   const handleLogout = () => {
-    logout()
+    eliminarUsuario()
     navigate('/login')
   }
 
-  const initials = user?.username
-    ? user.username.slice(0, 2).toUpperCase()
-    : 'AD'
+  const initials = obtenerIniciales(user?.username)
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/5 bg-dark-900/80 backdrop-blur-xl">
@@ -55,106 +30,62 @@ export default function Navbar() {
           <div className="flex items-center gap-8">
             <Link to="/dashboard" className="flex items-center gap-2.5 group">
               <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center shadow-glow-sm group-hover:shadow-glow transition-all duration-300">
-                <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-                </svg>
+                <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" /></svg>
               </div>
               <span className="font-display font-bold text-lg text-white tracking-tight">
                 Nex<span className="text-accent">Store</span>
               </span>
             </Link>
 
-            {/* Desktop Nav links */}
             <nav className="hidden md:flex items-center gap-1">
-              {NAV_LINKS.map((link) => {
-                const isActive =
-                  link.to === '/productos'
-                    ? location.pathname.startsWith('/productos') && location.pathname !== '/productos/nuevo'
-                    : location.pathname === link.to
+              {NAV_LINKS.map(({ to, label, icon }) => {
+                const isActive = to === '/productos'
+                  ? location.pathname.startsWith('/productos') && location.pathname !== '/productos/nuevo'
+                  : location.pathname === to
                 return (
-                  <Link
-                    key={link.to}
-                    to={link.to}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                      isActive
-                        ? 'bg-accent/15 text-accent'
-                        : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
-                    }`}
-                  >
-                    {link.icon}
-                    {link.label}
+                  <Link key={to} to={to}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${isActive ? 'bg-accent/15 text-accent' : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'}`}>
+                    {icon}{label}
                   </Link>
                 )
               })}
             </nav>
           </div>
 
-          {/* Right side */}
           <div className="flex items-center gap-2">
-            {/* User info */}
             <div className="flex items-center gap-3 pl-3 border-l border-white/10">
               <div className="text-right hidden sm:block">
                 <p className="text-xs text-gray-500 leading-none mb-0.5">Administrador</p>
-                <p className="text-sm font-semibold text-gray-200 leading-none capitalize">
-                  {user?.username}
-                </p>
+                <p className="text-sm font-semibold text-gray-200 leading-none capitalize">{user?.username}</p>
               </div>
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent to-neon-blue flex items-center justify-center text-xs font-bold text-white shadow-glow-sm">
                 {initials}
               </div>
             </div>
-
-            {/* Logout */}
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200 border border-transparent hover:border-red-500/20"
-              title="Cerrar sesión"
-            >
+            <button onClick={handleLogout}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200 border border-transparent hover:border-red-500/20">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
               <span className="hidden sm:inline">Salir</span>
             </button>
-
-            {/* Mobile menu toggle */}
-            <button
-              onClick={() => setMobileOpen(!mobileOpen)}
-              className="md:hidden flex items-center justify-center w-9 h-9 rounded-lg bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-colors ml-1"
-            >
-              {mobileOpen ? (
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              ) : (
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              )}
+            <button onClick={() => setOpen(!open)}
+              className="md:hidden w-9 h-9 rounded-lg bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 flex items-center justify-center ml-1">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                {open ? <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /> : <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />}
+              </svg>
             </button>
           </div>
         </div>
 
-        {/* Mobile nav */}
-        {mobileOpen && (
+        {open && (
           <div className="md:hidden border-t border-white/5 py-3 space-y-1 animate-fade-in">
-            {NAV_LINKS.map((link) => {
-              const isActive = location.pathname === link.to
-              return (
-                <Link
-                  key={link.to}
-                  to={link.to}
-                  onClick={() => setMobileOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                    isActive
-                      ? 'bg-accent/15 text-accent'
-                      : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
-                  }`}
-                >
-                  {link.icon}
-                  {link.label}
-                </Link>
-              )
-            })}
+            {NAV_LINKS.map(({ to, label, icon }) => (
+              <Link key={to} to={to} onClick={() => setOpen(false)}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${location.pathname === to ? 'bg-accent/15 text-accent' : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'}`}>
+                {icon}{label}
+              </Link>
+            ))}
           </div>
         )}
       </div>
